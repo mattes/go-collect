@@ -47,6 +47,18 @@ func TestSet(t *testing.T) {
 	p := New()
 	p.Set("foo", "bar")
 	assert.Equal(t, "bar", p.Get("foo"))
+
+	// test overwrite
+	p.Set("foo", "rab")
+	assert.Equal(t, "rab", p.Get("foo"))
+}
+
+func TestAdd(t *testing.T) {
+	p := New()
+	p.Add("foo", "bar")
+	p.Add("foo", "rab")
+	p.Add("foo", "foo", "bar")
+	assert.Equal(t, []string{"bar", "rab", "foo", "bar"}, p.GetAll("foo"))
 }
 
 func TestDelete(t *testing.T) {

@@ -1,6 +1,7 @@
 package urlquery
 
 import (
+	"fmt"
 	"github.com/mattes/go-collect/data"
 	"net/url"
 )
@@ -20,7 +21,7 @@ func (s *UrlQuery) Load(label string, u *url.URL) (*data.Data, error) {
 	var err error
 	u, err = url.Parse("?" + u.Host)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("source: urlquery: %v", err.Error())
 	}
 
 	d := data.New()

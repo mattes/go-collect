@@ -1,6 +1,7 @@
 package file
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/mattes/go-collect/data"
@@ -8,6 +9,13 @@ import (
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
+	"regexp"
+)
+
+var (
+	ErrEmptyPath   = errors.New("source: file: no path given")
+	ErrYamlParsing = errors.New("source: file: yaml parsing failed")
+	ErrYamlLevels  = errors.New("source: file: only 2 levels of indentation allowed")
 )
 
 // File implements Source interface
@@ -65,11 +73,11 @@ func (s *File) setPathFromUrl() {
 
 func (s *File) readFile() error {
 	if s.path == "" {
-		return errors.New("no file given")
+		return ErrEmptyPath
 	}
 	body, err := ioutil.ReadFile(s.path)
 	if err != nil {
-		return err
+		return fmt.Errorf("source: file: %v", err.Error())
 	}
 	s.body = body
 	return nil
@@ -78,6 +86,22 @@ func (s *File) readFile() error {
 // parse parses the file content into a yaml struct
 func (s *File) parse() error {
 
+	// Parse '<<:' to '<:' so we don't trigger the internal
+	// yaml pkg inheritance parsing. it will fail because of
+	// `map[string]map[string]interface{}`.
+	// yaml: map merge requires map or sequence of maps as the value
+	// We also don't want to rely on *label markers for inheritance.
+
+	// this major wtf replaces <<: with <: in every line
+	reRepl := regexp.MustCompile("^\\s*(<<:)")
+	spl := bytes.Split(s.body, []byte("\n"))
+	for i := 0; i < len(spl); i++ {
+		spl[i] = reRepl.ReplaceAllFunc(spl[i], func(in []byte) []byte {
+			return bytes.Replace(in, []byte("<<:"), []byte("<:"), 1)
+		})
+	}
+	s.body = bytes.Join(spl, []byte("\n"))
+
 	// try to unmarshal with labels
 	hasLabels := true
 	var yamlWithLabels map[string]map[string]interface{}
@@ -85,7 +109,7 @@ func (s *File) parse() error {
 		// try without labels
 		var yamlNoLabels map[string]interface{}
 		if err := yaml.Unmarshal(s.body, &yamlNoLabels); err != nil {
-			return errors.New("unable to parse yaml")
+			return ErrYamlParsing
 		}
 		yamlWithLabels = map[string]map[string]interface{}{
 			"default": yamlNoLabels,
@@ -104,10 +128,45 @@ func (s *File) parse() error {
 				s.yaml[k][k2] = interfaceSliceToStringSlice(v2.([]interface{}))
 
 			case map[interface{}]interface{}:
-				return errors.New("only 2 levels of indentation allowed")
+				return ErrYamlLevels
 
 			default:
 				s.yaml[k][k2] = []string{fmt.Sprintf("%v", v2)}
+			}
+		}
+	}
+
+	// parse inheritance, do this until all referenced labels are referenced
+	allParsed := false
+	for !allParsed {
+		allParsed = true
+		// loop over all labels
+		for label, vs := range s.yaml {
+			// loop over all key:values in label
+			for k, v := range vs {
+				// look for '<' keys
+				if k == "<" {
+					if len(v) != 1 {
+						// <<: [label, label] is not possible
+						return ErrYamlParsing
+					}
+					// delete '<' key
+					delete(s.yaml[label], k)
+					// check if referenced label exists
+					if refLabel, ok := s.yaml[v[0]]; ok {
+						// merge key:values from referenced label into this label
+						// loop over all keys:values in referenced label
+						for k, v := range refLabel {
+							if _, exists := vs[k]; !exists {
+								s.yaml[label][k] = v
+							}
+							// this label references another label
+							if k == "<" {
+								allParsed = false
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -116,7 +175,7 @@ func (s *File) parse() error {
 	if hasLabels {
 		var labelOrder yaml.MapSlice
 		if err := yaml.Unmarshal(s.body, &labelOrder); err != nil {
-			return errors.New("unable to parse yaml")
+			return ErrYamlParsing
 		}
 		s.labels = make([]string, 0)
 		for _, v := range labelOrder {

@@ -96,7 +96,7 @@ func TestParse(t *testing.T) {
 			flags:         f,
 			d:             data.New(),
 			remainingArgs: []string{},
-			err:           errors.New("flag provided but not defined: --bogus"),
+			err:           errors.New("flags: flag provided but not defined: --bogus"),
 		},
 		{
 			testDesc:      "source gets defined automatically",
@@ -112,7 +112,7 @@ func TestParse(t *testing.T) {
 			flags:         f,
 			d:             data.New(),
 			remainingArgs: []string{},
-			err:           errors.New("Scheme could not be found: bogus"),
+			err:           ErrUnknownScheme,
 		},
 	}
 

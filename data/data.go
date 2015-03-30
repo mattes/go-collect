@@ -64,8 +64,28 @@ func (d *Data) Pick(name string) string {
 	return d.Get(name)
 }
 
-func (d *Data) Set(name string, value ...string) {
+// Set sets (overwrites) values for name
+func (d *Data) Set(name string, value ...string) *Data {
 	d.data[name] = value
+	return d
+}
+
+// Add adds values for name
+func (d *Data) Add(name string, value ...string) *Data {
+	for _, v := range value {
+		d.data[name] = append(d.data[name], v)
+	}
+	return d
+}
+
+func (d *Data) SetTrue(name string) *Data {
+	d.Set(name, "true")
+	return d
+}
+
+func (d *Data) SetFalse(name string) *Data {
+	d.Set(name, "false")
+	return d
 }
 
 func (d *Data) Delete(name string) {

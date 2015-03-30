@@ -53,7 +53,7 @@ func (d *Flags) parse(args *[]string, setOnly bool) (*data.Data, error) {
 	}
 
 	if err := utils.ParseFlags(d.flagset, *args, false); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("flags: %v", err.Error())
 	}
 
 	// the visitor func
@@ -101,21 +101,25 @@ func (d *Flags) Exists(name string) bool {
 	return false
 }
 
-func (d *Flags) Var(names []string, usage string) {
+func (d *Flags) Var(names []string, usage string) *Flags {
 	v := opts.NewListOpts(nil)
 	d.flagset.Var(&v, names, usage)
+	return d
 }
 
-func (d *Flags) String(names []string, value string, usage string) {
+func (d *Flags) String(names []string, value string, usage string) *Flags {
 	d.flagset.String(names, value, usage)
+	return d
 }
 
-func (d *Flags) Bool(names []string, value bool, usage string) {
+func (d *Flags) Bool(names []string, value bool, usage string) *Flags {
 	d.flagset.Bool(names, value, usage)
+	return d
 }
 
-func (d *Flags) Int64(names []string, value int64, usage string) {
+func (d *Flags) Int64(names []string, value int64, usage string) *Flags {
 	d.flagset.Int64(names, value, usage)
+	return d
 }
 
 // Merge merges one or more Flags

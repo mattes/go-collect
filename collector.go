@@ -6,9 +6,14 @@ import (
 	"github.com/mattes/go-collect/data"
 	"github.com/mattes/go-collect/flags"
 	"net/url"
+	"os"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+)
+
+var (
+	ErrUnknownScheme = errors.New("source: scheme is unknown")
 )
 
 type Collector struct {
@@ -68,13 +73,13 @@ func (c *Collector) Parse(args []string, f ...*flags.Flags) (p *data.Data, remai
 
 		s := GetSource(u.Scheme)
 		if s == nil {
-			return nil, nil, errors.New("Scheme could not be found: " + u.Scheme)
+			return nil, nil, ErrUnknownScheme
 		}
 
 		// TODO do this async
 		p, err := s.Load(c.label, u)
 		if err != nil {
-			return nil, nil, errors.New(s.Scheme() + ": " + err.Error())
+			return nil, nil, err
 		}
 
 		// merge data from Load
@@ -141,9 +146,9 @@ func (c *Collector) GetDefaultSource() string {
 
 func (c *Collector) PrintUsage() {
 	for _, f := range c.flags {
-		fmt.Println()
+		fmt.Fprintln(os.Stderr, "")
 		if f.Name != "" {
-			fmt.Println(upperFirst(f.Name) + " options:")
+			fmt.Fprintln(os.Stderr, upperFirst(f.Name)+" options:")
 		}
 		f.PrintUsage()
 	}

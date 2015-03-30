@@ -37,6 +37,7 @@ func RegisterSource(s Source) {
 	if !strings.HasPrefix(s.ExampleUrl(), s.Scheme()+"://") {
 		panic("source: ExampleUrl() must start with Scheme()")
 	}
+	// TODO needed?!
 	// if _, dup := sources[s.Scheme()]; dup {
 	// 	panic("source: RegisterSource called twice for source " + s.Scheme())
 	// }

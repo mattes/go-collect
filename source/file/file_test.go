@@ -1,7 +1,6 @@
 package file
 
 import (
-	"errors"
 	"github.com/mattes/go-collect/data"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -108,11 +107,68 @@ func TestParse(t *testing.T) {
 			label:  "",
 			data:   data.ToData(map[string][]string{}),
 			labels: nil,
-			err:    errors.New("only 2 levels of indentation allowed"),
+			err:    ErrYamlLevels,
+		},
+
+		{
+			testDesc: "simple inheritance",
+			body: `
+      label1:
+        image: image
+        name: name
+      label2:
+        <<: label1
+        foo: foo
+        image: take-this
+      `,
+			label: "label2",
+
+			data: data.ToData(map[string][]string{
+				"image": []string{"take-this"},
+				"name":  []string{"name"},
+				"foo":   []string{"foo"},
+			}),
+			labels: []string{"label1", "label2"},
+			err:    nil,
+		},
+
+		{
+			testDesc: "inheritance in inheritance",
+			body: `
+      label1:
+        <<: label4  
+        image: image
+        name: name    
+      label3: 
+        <<: label2  
+        bar: bar
+        foo: foo3   
+        name: name2 
+      label2: 
+        <<: label1
+        foo: foo    
+      label4: 
+        oof: oof
+        name: name4    
+      `,
+			label: "label3",
+
+			data: data.ToData(map[string][]string{
+				"image": []string{"image"},
+				"name":  []string{"name2"},
+				"foo":   []string{"foo3"},
+				"bar":   []string{"bar"},
+				"oof":   []string{"oof"},
+			}),
+			labels: []string{"label1", "label3", "label2", "label4"},
+			err:    nil,
 		},
 	}
 
 	for _, tt := range tests {
+		if tt.testDesc != "inheritance" {
+			continue
+		}
 		f := File{}
 		f.body = []byte(tt.body)
 		err := f.parse()
