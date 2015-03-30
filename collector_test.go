@@ -6,6 +6,8 @@ import (
 	"github.com/mattes/go-collect/flags"
 	"github.com/mattes/go-collect/source/urlquery"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -118,7 +120,22 @@ func TestParse(t *testing.T) {
 
 	for _, tt := range tests {
 		f := New()
+
+		// capture Stderr as f.Parse fmt.Prints(os.stderr) ... sucks
+		rescueStderr := os.Stderr
+		r, w, _ := os.Pipe()
+		os.Stderr = w
+
 		d, remainingArgs, err := f.Parse(tt.args, tt.flags)
+
+		w.Close()
+		out, _ := ioutil.ReadAll(r)
+		os.Stderr = rescueStderr
+
+		if !assert.Equal(t, tt.err, err, tt.testDesc) {
+			t.Logf("%s", out)
+		}
+
 		assert.Equal(t, tt.err, err, tt.testDesc)
 		if err == nil {
 			assert.Equal(t, tt.d, d, tt.testDesc)
