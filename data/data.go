@@ -94,6 +94,29 @@ func (d *Data) Delete(name string) {
 	}
 }
 
+func (d *Data) Raw() map[string][]string {
+	return d.data
+}
+
+func (d *Data) RawEnhanced() map[string]interface{} {
+	n := make(map[string]interface{})
+	for k, v := range d.data {
+		if len(v) == 1 {
+			switch v[0] {
+			case "true":
+				n[k] = true
+			case "false":
+				n[k] = false
+			default:
+				n[k] = v[0]
+			}
+		} else {
+			n[k] = v
+		}
+	}
+	return n
+}
+
 // Merge merges p2 into p.data.
 // Later values overwrite previous ones.
 func (d *Data) Merge(p2 ...*Data) {
