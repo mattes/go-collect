@@ -32,3 +32,7 @@ func (s *UrlQuery) Load(label string, u *url.URL) (*data.Data, error) {
 
 	return d, nil
 }
+
+func (s *UrlQuery) Labels() []string {
+	return nil
+}

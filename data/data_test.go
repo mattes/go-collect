@@ -157,6 +157,14 @@ func TestToData(t *testing.T) {
 	assert.Equal(t, p, tp)
 }
 
+func TestRaw(t *testing.T) {
+	// TODO
+}
+
+func TestRawEnhanced(t *testing.T) {
+	// TODO
+}
+
 func TestIsTrue(t *testing.T) {
 	// TODO
 }

@@ -66,17 +66,13 @@ func (c *Collector) Parse(args []string, f ...*flags.Flags) (p *data.Data, remai
 
 	sourceData := data.New()
 	for _, sarg := range c.Sources() {
-		u, err := url.Parse(sarg)
+		s, err := c.getSourceFromScheme(sarg)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		s := GetSource(u.Scheme)
-		if s == nil {
-			return nil, nil, ErrUnknownScheme
-		}
-
 		// TODO do this async
+		u, _ := url.Parse(sarg)
 		p, err := s.Load(c.label, u)
 		if err != nil {
 			return nil, nil, err
@@ -90,6 +86,33 @@ func (c *Collector) Parse(args []string, f ...*flags.Flags) (p *data.Data, remai
 	sourceData.Merge(argsData)
 
 	return sourceData, c.args, nil
+}
+
+func (c *Collector) getSourceFromScheme(source string) (Source, error) {
+	u, err := url.Parse(source)
+	if err != nil {
+		return nil, ErrUnknownScheme
+	}
+
+	s := GetSource(u.Scheme)
+	if s == nil {
+		return nil, ErrUnknownScheme
+	}
+
+	return s, nil
+}
+
+func (c *Collector) Labels() []string {
+	rl := make([]string, 0)
+	for _, sarg := range c.Sources() {
+		s, err := c.getSourceFromScheme(sarg)
+		if err == nil {
+			if labels := s.Labels(); labels != nil {
+				rl = append(rl, labels...)
+			}
+		}
+	}
+	return rl
 }
 
 func (c *Collector) AddFlags(f ...*flags.Flags) {
@@ -114,12 +137,7 @@ func (c *Collector) flagDefined(name string) bool {
 }
 
 func (c *Collector) parseLabel() (label string) {
-	if len(c.args) > 0 && !strings.HasPrefix(c.args[0], "-") {
-		label = c.args[0]
-		c.args = c.args[1:]
-		return label
-	}
-	return ""
+	return ParseLabel(&c.args)
 }
 
 func (c *Collector) Label() string {
@@ -152,6 +170,15 @@ func (c *Collector) PrintUsage() {
 		}
 		f.PrintUsage()
 	}
+}
+
+func ParseLabel(args *[]string) (label string) {
+	if len(*args) > 0 && !strings.HasPrefix((*args)[0], "-") {
+		label = (*args)[0]
+		*args = (*args)[1:]
+		return label
+	}
+	return ""
 }
 
 // upperFirst makes first letter uppercase

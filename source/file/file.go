@@ -56,6 +56,10 @@ func (s *File) Load(label string, u *url.URL) (*data.Data, error) {
 	return s.getData(s.label), nil
 }
 
+func (s *File) Labels() []string {
+	return s.labels
+}
+
 func (s *File) setPathFromUrl() {
 	// TODO what about windows and file://paths?
 

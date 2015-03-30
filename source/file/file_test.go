@@ -184,6 +184,19 @@ func TestSetPathFromUrl(t *testing.T) {
 	// TODO
 }
 
+func TestLabels(t *testing.T) {
+	f := File{}
+	f.body = []byte(`
+  label:
+    image: test
+  another-label:
+    image: test`)
+	assert.NoError(t, f.parse())
+	assert.Contains(t, f.Labels(), "label")
+	assert.Contains(t, f.Labels(), "another-label")
+	assert.Equal(t, 2, len(f.Labels()))
+}
+
 func TestSelectLabel(t *testing.T) {
 	var tests = []struct {
 		labelsInFile []string

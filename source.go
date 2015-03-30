@@ -20,6 +20,9 @@ type Source interface {
 	// Read or load any additional sources here
 	// Return data for label
 	Load(label string, u *url.URL) (*data.Data, error)
+
+	// Returns all labels
+	Labels() []string
 }
 
 var sources = make(map[string]Source)
