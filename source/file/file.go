@@ -42,8 +42,6 @@ func (s *File) ExampleUrl() string {
 
 func (s *File) Load(label string, u *url.URL) (*data.Data, error) {
 	s.url = u
-	s.label = label
-
 	s.setPathFromUrl()
 
 	if err := s.readFile(); err != nil {
@@ -53,7 +51,9 @@ func (s *File) Load(label string, u *url.URL) (*data.Data, error) {
 		return nil, err
 	}
 
-	return s.getData(s.label), nil
+	s.label = s.selectLabel(label)
+
+	return s.getData(), nil
 }
 
 func (s *File) Labels() []string {
@@ -210,9 +210,9 @@ func (s *File) selectLabel(label string) string {
 		// use label
 		useLabel = label
 
-	} else if label == "" && s.labelExists(s.label) {
-		// use default label
-		useLabel = s.label
+	} else if label != "" && !s.labelExists(label) {
+		// don't return anything if specifc label was not found
+		useLabel = ""
 
 	} else if s.labelExists("default") {
 		// use "default" label
@@ -228,10 +228,9 @@ func (s *File) selectLabel(label string) string {
 
 // getYamlForLabel internally selects the right label to return
 // given label (if exists), default label (if exist) or first label
-func (s *File) getYamlForLabel(label string) (p map[string][]string, ok bool) {
-	useLabel := s.selectLabel(label)
+func (s *File) getYamlForLabel() (p map[string][]string, ok bool) {
 	for k, v := range s.yaml {
-		if k == useLabel {
+		if k == s.label {
 			return v, true
 		}
 	}
@@ -239,8 +238,8 @@ func (s *File) getYamlForLabel(label string) (p map[string][]string, ok bool) {
 }
 
 // Data returns param.Data for given label
-func (s *File) getData(label string) *data.Data {
-	ps, ok := s.getYamlForLabel(s.selectLabel(label))
+func (s *File) getData() *data.Data {
+	ps, ok := s.getYamlForLabel()
 	if !ok {
 		return data.New()
 	}

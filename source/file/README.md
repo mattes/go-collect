@@ -11,3 +11,13 @@ Currently supports YAML files only.
 --source=file://../relative/path/to/file.yml
 --source=file://file.yml
 ```
+
+## Default label
+
+* If you don't ask for a specific label, it will
+  * return label ``default`` if found
+  * or return first found label
+
+* If you ask for a specific label, it will
+  * return this specific label if found
+  * and just don't return anything else if not found

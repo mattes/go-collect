@@ -174,7 +174,7 @@ func TestParse(t *testing.T) {
 		err := f.parse()
 		assert.Equal(t, tt.err, err, tt.testDesc)
 		if err == nil {
-			assert.Equal(t, tt.data, f.getData(tt.label), tt.testDesc)
+			assert.Equal(t, tt.data, f.getData(), tt.testDesc)
 			assert.Equal(t, tt.labels, f.labels, tt.testDesc)
 		}
 	}
@@ -201,30 +201,31 @@ func TestSelectLabel(t *testing.T) {
 	var tests = []struct {
 		labelsInFile []string
 		labelFromArg string
-		selectLabel  string
 		outLabel     string
 	}{
 		// all empty
-		{[]string{}, "", "", ""},
+		{[]string{}, "", ""},
 
-		// use given label
-		{[]string{"label"}, "label", "label", "label"},
-		{[]string{"label"}, "", "label", "label"},
+		// If you don't ask for a specific label, it will ...
+		// return label ``default`` if found, or
+		{[]string{"foo", "default", "bar"}, "", "default"},
 
-		// use default label
-		{[]string{"default"}, "", "", "default"},
+		// ... return first found label
+		{[]string{"foo", "bar"}, "", "foo"},
 
-		// use first found label
-		{[]string{"foo", "bar"}, "", "", "foo"},
+		// If you ask for a specific label, it will ...
+		// return this specific label if found, and
+		{[]string{"foobar", "label"}, "label", "label"},
 
-		// always use default value if given
-		{[]string{"foo", "default", "bar"}, "", "", "default"},
+		// just don't return anything
+		{[]string{}, "not-found", ""},
+		{[]string{"foobar", "label"}, "not-found", ""},
 	}
 
 	for _, tt := range tests {
 		f := File{}
 		f.label = tt.labelFromArg
 		f.labels = tt.labelsInFile
-		assert.Equal(t, tt.outLabel, f.selectLabel(tt.selectLabel))
+		assert.Equal(t, tt.outLabel, f.selectLabel(tt.labelFromArg))
 	}
 }
