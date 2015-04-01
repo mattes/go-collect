@@ -120,6 +120,7 @@ func (s *File) parse() error {
 		if err := yaml.Unmarshal(s.body, &yamlNoLabels); err != nil {
 			return ErrYamlParsing
 		}
+
 		yamlWithLabels = map[string]map[string]interface{}{
 			"default": yamlNoLabels,
 		}

@@ -184,7 +184,7 @@ func TestParse(t *testing.T) {
 		},
 
 		{
-			testDesc: "inheritance declartion",
+			testDesc: "inheritance declaration",
 			body: `
       label1:
         foo: bar 
@@ -202,6 +202,20 @@ func TestParse(t *testing.T) {
 			}),
 			labels: []string{"label1", "label2", "label3"},
 			err:    nil,
+		},
+
+		{
+			testDesc: "invalid variable foo:bar",
+			body: `
+      label1:
+        foo:bar # this is a problem, because it means key:key
+        rab: foo
+      `,
+			label: "label1",
+
+			data:   data.New(),
+			labels: []string{},
+			err:    ErrYamlParsing,
 		},
 	}
 
