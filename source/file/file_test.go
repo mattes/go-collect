@@ -182,6 +182,27 @@ func TestParse(t *testing.T) {
 			labels: []string{"label1", "label3", "label2", "label4"},
 			err:    nil,
 		},
+
+		{
+			testDesc: "inheritance declartion",
+			body: `
+      label1:
+        foo: bar 
+
+      label2: 
+        <<: label1
+
+      label3: 
+        <<:label1
+      `,
+			label: "label1",
+
+			data: data.ToData(map[string][]string{
+				"foo": []string{"bar"},
+			}),
+			labels: []string{"label1", "label2", "label3"},
+			err:    nil,
+		},
 	}
 
 	for _, tt := range tests {
